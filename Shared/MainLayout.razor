@@ -1,0 +1,52 @@
+﻿@inherits LayoutComponentBase
+@using System.Security.Claims
+
+<PageTitle>Test</PageTitle>
+
+<div class="page">
+    <AuthorizeView>
+        <Authorized>
+            <div class="sidebar d-print-none">
+                <NavMenu />
+            </div>
+        </Authorized>
+    </AuthorizeView>  
+
+    <main>
+        <div class="top-row px-4 d-print-none" style="background-color: rgb(12, 12, 12);">
+            <AuthorizeView>
+                <Authorized>
+                    <a class="nav-link active text-white" href="user">
+                        <span class="oi oi-person"></span>
+                        <strong>@Cashier</strong>
+                    </a>
+                </Authorized>
+            </AuthorizeView>
+            <a href="https://docs.microsoft.com/aspnet/" target="_blank" class="text-white">About</a>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code{
+    public string Cashier { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {        
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            
+            var userNameClaim = user.FindFirst(ClaimTypes.GivenName);
+            if (userNameClaim != null)
+            {
+                Cashier = userNameClaim.Value;
+            }
+        }
+    }
+}

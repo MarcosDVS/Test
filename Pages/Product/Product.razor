@@ -1,0 +1,336 @@
+@page "/producto"
+@attribute [Authorize(Roles = "Admin,User")]
+
+<style>
+    /* Estilo para resaltar las filas al pasar el cursor */
+    .table-hover tbody tr:hover {
+        background-color: #f5f5f5; /* Cambia el color al pasar el cursor */
+    }
+
+    /* Estilo para el contenedor de la tabla */
+    .table-container {
+        margin-top: 20px;
+    }
+
+    /* Estilo para el cuerpo de la tarjeta */
+    .card-body {
+        padding: 20px;
+    }
+
+    /* Estilo para centrar el texto en las celdas de la tabla */
+    .table th, .table td {
+        text-align: center;
+    }
+
+    .titulo-proveedores {
+        background-image: linear-gradient(180deg, rgb(0, 29, 82) 0%, rgb(0, 0, 0) 70%);
+        color: #ffffff; /* Texto blanco */
+        text-align: center; /* Centrar texto */
+        padding: 10px; /* Añadir espacio alrededor del texto */
+    }
+</style>
+
+
+<h1 class="titulo-proveedores d-print-none">Listado de Productos</h1>
+<h1 class="d-none d-print-block text-center">Listado de Productos</h1>
+
+<div class="modal" style="display: @(showCard ? "block" : "none"); background-color: rgba(0, 0, 0, 0.5);" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title"><b>@TituloForm</b></h5>
+                <button type="button" class="close btn btn-danger" data-dismiss="modal" aria-label="Close" @onclick="CloseCard">
+                    <span aria-hidden="true" class="oi oi-x"></span>
+                </button>
+            </div>
+
+            <EditForm Model="productoRequest" OnValidSubmit="Send">
+                <div class="modal-body">
+                    @if (Message != null)
+                    {
+                        <div class="alert-warning text-center">
+                            <label class="text-dark"><strong>@Message</strong></label>
+                        </div>
+                    }
+                    <div class="form-group input-group mb-3 mt-1">
+                        <span class="input-group-text bg-white text-black">
+                            <span class="oi oi-code"></span>
+                        </span>
+                        <input type="text" class="form-control" placeholder="Codigo" id="nombreCompleto" 
+                            @bind-value="productoRequest.Codigo" required />
+                    </div>
+                    @if(productoRequest.Id > 0)
+                    {
+                        <div class="row mb-3">
+                            <div class="col">
+                                <div class="input-group">
+                                    <label class="input-group-text bg-white text-black">
+                                        <span class="oi oi-plus"></span>
+                                    </label>
+                                    <input type="number" class="form-control"  
+                                        @bind-value="@Stock"/>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="input-group">
+                                    <label class="input-group-text bg-white text-black"><strong>Stock</strong></label>
+                                    <input type="number" class="form-control"  
+                                        @bind-value="productoRequest.Stock"/>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else{
+                        <div class="form-group input-group mb-3">
+                            <span class="input-group-text bg-white text-black">
+                                <strong>Stock</strong>
+                            </span>
+                            <input type="number" class="form-control" placeholder="Stock" id="correo" 
+                                @bind-value="productoRequest.Stock" required min="0.01" step="0.01"
+                                title="Agrega la cantidad de productos"/>
+                        </div>
+                    }
+                    <div class="form-group input-group mb-3">
+                        <span class="input-group-text bg-white text-black">
+                            <span class="oi oi-document"></span>
+                        </span>
+                        <input type="text" class="form-control" placeholder="Descripción" id="correo" 
+                            @bind-value="productoRequest.Descripcion" required/>
+                    </div>
+                    <div class="form-group input-group mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white text-black">
+                                <span class="oi oi-spreadsheet"></span>
+                            </span>
+                            <select class="form-select" placeholder="categoría" @bind="productoRequest.Categoria" required>
+                                <option disabled selected>Selecciona una categoría</option>
+                                <option value="Ropa de Hombre">Ropa de Hombre</option>
+                                <option value="Ropa de Mujer">Ropa de Mujer</option>
+                                <option value="Ropa de Niño">Ropa de Niño</option>
+                                <option value="Ropa de Niño">Ropa de Bebe</option>
+                                <option value="Juguete">Juguete</option>
+                                <option value="Utensilios de Cocina">Utensilios de Cocina</option>
+                                <option value="Electrónico">Electrónico</option>
+                                <option value="Muebles">Mueble</option>
+                                <option value="Decoracione">Decoracion</option>
+                                <option value="Deporte">Equipo Deportivo</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group input-group mb-3">
+                        <span class="input-group-text bg-white text-black">
+                            <span class="oi oi-dollar"></span>
+                        </span>
+                        <input class="form-control" placeholder="Precio/Venta" id="precio" 
+                        @bind-value="productoRequest.Precio" required min="0.01" step="0.01"
+                        title="Precio de venta"/>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-dark text-white">
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" @onclick="CloseCard">Cerrar</button>
+                    </div>
+                </div>
+            </EditForm>
+
+        </div>
+    </div>
+</div>
+
+<div class="table-container">
+    <div class="card col-12">
+        <div class="card-body">
+            <!-- Button trigger modal -->
+            <button class="btn btn-outline-success d-print-none" @onclick="ShowCard">
+                <span class="oi oi-plus"></span>
+            </button>
+            <button class="btn btn-outline-primary d-print-none" 
+                @onclick="async ()=>{await PrintPageAsync();}">
+                <span class="oi oi-print"></span>
+            </button>
+
+            <div class="row">
+                <div class="col-8"></div>
+                <div class="col-4">
+                    <div class="input-group d-print-none">
+                        <input type="text" class="form-control border-0 border-bottom" 
+                        placeholder="Buscar por Descripcion" @bind="Filtro">
+                        <button class="btn btn-outline input-group-text border-0 bg-white" 
+                            type="button" id="button-addon2" @onclick="()=>CargarContactos()">
+                            <span class="oi oi-magnifying-glass text-black"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row-12 mt-2">
+                <table class="table table-striped">
+                    <thead style="background-image: linear-gradient(180deg, rgb(0, 29, 82) 0%, rgb(0, 0, 0) 70%); color: #ffffff;">
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Stock</th>
+                            <th>Descripción</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th class="d-print-none">...</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var productoRow in Productos)
+                        {
+                            <tr>
+                                <td>@productoRow.Codigo</td>
+                                <td>@productoRow.Stock</td>
+                                <td>@productoRow.Descripcion</td>
+                                <td>@productoRow.Categoria</td>
+                                <td>$@productoRow.Precio.ToString("N2")</td>
+                                <td class="d-print-none">
+                                    <button @onclick="()=>Seleccionar(productoRow.Id)"
+                                        class="btn btn-outline-warning">
+                                        <span class="oi oi-pencil"></span>
+                                    </button>
+                                    <button @onclick="()=>Eliminar(productoRow)"
+                                        class="btn btn-outline-danger">
+                                        <span class="oi oi-trash"></span>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+@code {
+    public string TituloForm => productoRequest.Id == 0 ? 
+    "Agregar Producto" : "Modificar Producto";
+    
+    public string Filtro { get; set; } = "";
+    public bool ShowForm { get; set; } = false;
+    public List<ProductoResponse> Productos { get; set; } = new();
+    public ProductoRequest productoRequest { get; set; } = new();
+    public bool showCard { get; set; } = false;
+    public string Message { get; set; } = null;
+    public string Nombre { get; set; } = string.Empty;
+    public string NombreEmp { get; set; } = string.Empty;
+    public int Stock { get; set; } = 0;
+    void GoCategory()
+    {
+        urlHelper.NavigateTo("category");
+    }
+    void ShowCard()
+    {
+        showCard = true;
+    }
+
+    void CloseCard()
+    {
+        productoRequest  = new ProductoRequest();
+        showCard = false;
+        Message = null;
+        Stock = 0;
+    }
+
+    async Task CargarContactos()
+    {
+        var resultado =
+        await productoServices.Consultar(Filtro);
+        if (resultado.Success)
+        {
+            Productos = resultado.Data!;
+        }
+    }
+    
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarContactos();
+    }
+
+    void Cancelar()
+    {
+        productoRequest  = new ProductoRequest();
+        showCard = false;
+        Stock = 0;
+    }
+    
+    public async Task Send()
+    {
+        if (productoRequest.Id == 0)
+        {
+            var existingUser = Productos.FirstOrDefault(u => u.Codigo.Equals(productoRequest.Codigo, StringComparison.OrdinalIgnoreCase));
+            if (existingUser != null)
+            {
+                Message = "El código "+productoRequest.Codigo +" ya pertenece a un articulo 🤨";
+                return;
+            }
+            var r = await productoServices.Crear(productoRequest);
+            if (r.Success)
+            {
+                Cancelar();
+                await CargarContactos();
+                StateHasChanged();
+            }
+            else{
+                Message = r.Message;
+            }
+        }
+        else
+        {
+            // Debo solicitar modificar el producto.
+            if(Stock > 0)
+            {
+                productoRequest.Stock += Stock;
+            }
+            var r = await productoServices.Modificar(productoRequest);
+            if (r.Success)
+            {
+                Cancelar();
+                await CargarContactos();
+                StateHasChanged();
+            }
+            else{
+                Message = r.Message;
+            }
+        }
+    }
+    public void Seleccionar(int Id)
+    {
+        showCard = true;
+        productoRequest = Productos
+        .Where(c => c.Id == Id)
+        .Select(c => c.ToRequest())
+        .FirstOrDefault() ?? new ProductoRequest();
+    }
+    public async Task Eliminar(ProductoResponse item)
+    {
+        var resultado = await productoServices.Eliminar(item.ToRequest());
+        if (resultado.Success)
+        {
+            await CargarContactos();
+            StateHasChanged();
+        }
+    }
+    
+    private async Task PrintPageAsync()
+    {
+        // Llama a la función JavaScript para imprimir la página
+        await JSRuntime.InvokeVoidAsync("printPage");
+    }
+    void ActualizarPrecioVenta(ChangeEventArgs args)
+    {
+        if (decimal.TryParse(args.Value.ToString(), out decimal precioCompra))
+        {
+            // Calcula el precio de venta sumando un 30% al precio de compra
+            productoRequest.Precio = precioCompra * 1.3m; // Aumento del 30%
+        }
+    }
+
+}
